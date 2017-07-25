@@ -5,24 +5,28 @@
     // Define the schema
     myConnector.getSchema = function(schemaCallback) {
         var cols = [{
-            id: "id",
-            dataType: tableau.dataTypeEnum.string
+            id: "Date",
+            dataType: tableau.dataTypeEnum.String
         }, {
-            id: "mag",
-            alias: "magnitude",
-            dataType: tableau.dataTypeEnum.float
+            id: "Voltage",
+            alias: "Voltage",
+            dataType: tableau.dataTypeEnum.Integer
         }, {
-            id: "title",
-            alias: "title",
-            dataType: tableau.dataTypeEnum.string
+            id: "Current",
+            alias: "Current",
+            dataType: tableau.dataTypeEnum.Integer
         }, {
-            id: "lat",
-            alias: "latitude",
-            dataType: tableau.dataTypeEnum.float
+            id: "Hz",
+            alias: "Hz",
+            columnRole: "dimension",
+            // Do not aggregate values as measures in Tableau--makes it easier to add to a map 
+            dataType: tableau.dataTypeEnum.Integer
         }, {
-            id: "lon",
-            alias: "longitude",
-            dataType: tableau.dataTypeEnum.float
+            id: "Active",
+            alias: "Active",
+            columnRole: "dimension",
+            // Do not aggregate values as measures in Tableau--makes it easier to add to a map 
+            dataType: tableau.dataTypeEnum.Integer
         }];
 
         var tableSchema = {
@@ -36,21 +40,42 @@
 
     // Download the data
     myConnector.getData = function(table, doneCallback) {
-        $.getJSON("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson", function(resp) {
-            var feat = resp.features,
+        $.getJSON("http://aws.axelta.com/getSampleData?deviceNo=VW2117&nodeNo=002&limit=100&timeFrom=0&timeTo=0&hourAvg=null&sensorName=sensor_2&allData=null", function(resp) {
+          //  var feat = resp.features,
                 tableData = [];
-
+				
+				//Krishna
+				//JSONArray respArray = resp;
+				//JSONArray arr1 = respArray[0].getJSONArray();
+				for(var k=0;k<arr1.length;k++){
+					JSONObject obj = resp[0].getJSONArray().arr1[k].getJSONObject();
+				   JSONObject jsonDataJsonObj =obj.getJSONObject("jsonData");
+				   
+				   tableData.push({
+                    "Date": jsonDataJsonObj.VW_Date,
+                    "Voltage": jsonDataJsonObj.voltage,
+                    "Current": jsonDataJsonObj.current,
+                    "Hz": jsonDataJsonObj.hz,
+                    "Active": jsonDataJsonObj.active
+                });
+				   
+				   
+				   
+				}
+				
+				
+				
             // Iterate over the JSON object
-            for (var i = 0, len = feat.length; i < len; i++) {
+           /* for (var i = 0, len = feat.length; i < len; i++) {
                 tableData.push({
-                    "id": feat[i].id,
-                    "mag": feat[i].properties.mag,
-                    "title": feat[i].properties.title,
-                    "lon": feat[i].geometry.coordinates[0],
-                    "lat": feat[i].geometry.coordinates[1]
+                    "Date": feat[i].id,
+                    "Voltage": feat[i].properties.mag,
+                    "Current": feat[i].properties.title,
+                    "Hz": feat[i].geometry.coordinates[0],
+                    "Active": feat[i].geometry.coordinates[1]
                 });
             }
-
+*/
             table.appendRows(tableData);
             doneCallback();
         });
@@ -61,7 +86,7 @@
     // Create event listeners for when the user submits the form
     $(document).ready(function() {
         $("#submitButton").click(function() {
-            tableau.connectionName = "USGS Earthquake Feed"; // This will be the data source name in Tableau
+            tableau.connectionName = "Solar panel demo"; // This will be the data source name in Tableau
             tableau.submit(); // This sends the connector object to Tableau
         });
     });
